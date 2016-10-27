@@ -61,8 +61,8 @@ public class SimulatedAnnealing {
                 		 int value = Integer.parseInt(sepLine[city]);
                 		 if(value==-1)
                 			 precursors.add(city+1);
-                		 else
-                			 distances.put(city+1, value);                			 
+                		 
+                		 distances.put(city+1, value);                			 
                 	 }
                 	 City city = new City(lineNumber-8,distances,precursors);
                 	 TourManager.addCity(city);
@@ -97,10 +97,10 @@ public class SimulatedAnnealing {
         //TODO: while external to Simulated Annealing
         // Set initial temp
         //TODO: Improve temperature and coolingRate choice
-        double temp = 10000.0 * Math.pow(111/dimension,2);
+        double temp = 10000.0*dimension;
 
         // Cooling rate
-        double coolingRate = 0.003 * (1.0/Math.pow(111/dimension,2));
+        double coolingRate = 0.003*(1.0/dimension);
         
         System.out.println("Temperature: " + temp);
         System.out.println("Cooling Rate: " + coolingRate);
@@ -115,69 +115,89 @@ public class SimulatedAnnealing {
         System.out.println("Initial solution distance: " + currentSolution.getDistance());
 
         // Set as current best
-        Tour best = new Tour(currentSolution.getTour());
+        Tour currentBest = new Tour(currentSolution.getTour());
+        Tour finalBest = new Tour(currentSolution.getTour());
         
-        long elapsedTime = 0;
-        int totalFailCounter = 0;
+        long thisStartTime = startTime;
         
-        // Loop until system has cooled
-        while (temp > 1 && elapsedTime < 10000) {
-        	Tour newSolution = new Tour(currentSolution.getTour());
-        	int failCounter = 0;
-        	
-        	//2-OPT method
-        	//TODO: Need to improve the 2-OPT (2069046 errors into ESC07 (9 cities)!)
-			do{
-	            // Create new neighbour tour
-	            newSolution = new Tour(currentSolution.getTour());
+        long nodesVisited = 0;
+        
+        int multiStart = 0;
+        
+        
+        for(multiStart=0; multiStart<dimension; multiStart++)
+        { //multistart loop
+        	long elapsedTime = 0;
+        	thisStartTime = System.nanoTime();
+	        // Loop until system has cooled
+	        while (temp > 1) {
+	        	Tour newSolution = new Tour(currentSolution.getTour());
+	        	long failCounter = 0;
+	        	
+	        	//2-OPT method
+	        	//CHOICE: if it is invalid, use this anyway
+				
+	        	// Create new neighbour tour
+	        	newSolution = new Tour(currentSolution.getTour());
+
+	        	// Get a random positions in the tour
+	        	int tourPos1 = (int) (newSolution.tourSize() * Math.random());
+	        	int tourPos2 = (int) (newSolution.tourSize() * Math.random());
+
+	        	// Get the cities at selected positions in the tour
+	        	City citySwap1 = newSolution.getCity(tourPos1);
+	        	City citySwap2 = newSolution.getCity(tourPos2);
+
+	        	// Swap them
+	        	newSolution.setCity(tourPos2, citySwap1);
+	        	newSolution.setCity(tourPos1, citySwap2);
+	        		            
+	            // Get energy of solutions
+	            int currentEnergy = currentSolution.getDistance();
+	            int neighbourEnergy = newSolution.getDistance();
 	
-	            // Get a random positions in the tour
-	            int tourPos1 = (int) (newSolution.tourSize() * Math.random());
-	            int tourPos2 = (int) (newSolution.tourSize() * Math.random());
+	            // Decide if we should accept the neighbour
+	            if (acceptanceProbability(currentEnergy, neighbourEnergy, temp) > Math.random()) {
+	                currentSolution = new Tour(newSolution.getTour());
+	            }
 	
-	            // Get the cities at selected positions in the tour
-	            City citySwap1 = newSolution.getCity(tourPos1);
-	            City citySwap2 = newSolution.getCity(tourPos2);
-	
-	            // Swap them
-	            newSolution.setCity(tourPos2, citySwap1);
-	            newSolution.setCity(tourPos1, citySwap2);
+	            // Keep track of the best solution found
+	            if (currentSolution.getDistance() < currentBest.getDistance()) {
+	                currentBest = new Tour(currentSolution.getTour());
+	            }
 	            
-	            failCounter++;
-            
-            //test if valid
-        	}while(newSolution.violatePriorities());
-            
-            //System.out.println("Failed to swap " + (failCounter-1) + " times!");
-            
-            // Get energy of solutions
-            int currentEnergy = currentSolution.getDistance();
-            int neighbourEnergy = newSolution.getDistance();
-
-            // Decide if we should accept the neighbour
-            if (acceptanceProbability(currentEnergy, neighbourEnergy, temp) > Math.random()) {
-                currentSolution = new Tour(newSolution.getTour());
-            }
-
-            // Keep track of the best solution found
-            if (currentSolution.getDistance() < best.getDistance()) {
-                best = new Tour(currentSolution.getTour());
-            }
-            
-            // Cool system
-            temp *= 1-coolingRate;
-            
-            long nowTime = System.nanoTime();
-            elapsedTime = (nowTime - startTime)/1000000;//in milisseconds
-            
-            totalFailCounter += failCounter;
+	            // Cool system
+	            temp *= 1-coolingRate;
+	            
+	            long nowTime = System.nanoTime();
+	            elapsedTime = (nowTime - thisStartTime)/1000000;//in milisseconds
+	            
+	            nodesVisited++;
+	        }
+	        
+	        System.out.println("Best at start number " + (multiStart+1) + ": " + currentBest.getDistance() + " (" + elapsedTime + "ms)");
+	        
+	        if(currentBest.getDistance() < finalBest.getDistance()){
+	        	finalBest = new Tour(currentBest.getTour());
+	        }
+	        
+	        //new beggining
+	        currentSolution = new Tour(); //new "currentSolution" to the new start
+	        currentSolution.generateIndividual();
+	        
+	        currentBest = new Tour(currentSolution.getTour());
+	        
+	        //restart temperature
+	        temp = 10000.0*dimension;
+        	coolingRate = 0.003*(1.0/dimension);
         }
         
         long endTime = System.nanoTime();
 
-        System.out.println("\nFinal solution distance: " + best.getDistance());
-        System.out.println("Tour: " + best);
-        System.out.println("Total swap errors: " + totalFailCounter + " times.");
+        System.out.println("\nFinal solution distance: " + finalBest.getDistance());
+        System.out.println("Tour: " + finalBest);
+        System.out.println("Total nodes visited: " + nodesVisited + " nodes.");
+        System.out.println("Total multi-starts: " + dimension + " starts.");
         
         long duration = (endTime - startTime)/1000000; //in milisseconds
         System.out.println("Simulated Annealing Time: " + duration/1000.0 + "s");

@@ -47,6 +47,28 @@ public class Tour{
     	//true if the priorities are not violated
     	return false;
     }
+    
+    public int countViolations(){
+    	ArrayList<Integer> alreadyPassed = new ArrayList<Integer>();
+    	int violations = 0;
+    	
+    	// Loop through the tour
+    	for (int cityIndex = 0; cityIndex < TourManager.numberOfCities(); cityIndex++){
+    		City city = getCity(cityIndex);
+    		
+    		//Test if all city precursors have not already passed
+    		if (!alreadyPassed.containsAll(city.getPrecursors())){
+    			//System.out.println(tour.toString() + " violates! ");
+    			violations++;
+    		}
+    		
+    		//add the city to alreadyPassed
+    		alreadyPassed.add(city.getName());
+    	}
+    	
+    	//true if the priorities are not violated
+    	return violations;
+    }
 
     // Creates a random individual
     public void generateIndividual() {
@@ -54,13 +76,8 @@ public class Tour{
     	for (int cityIndex=0; cityIndex < tourSize(); cityIndex++) {
           setCity(cityIndex, TourManager.getCity(cityIndex));
         }
-    	//shuffle until the tour doesn't violate priorities
-    	//WARNING: THIS PROBABLY WILL BE A BOTTLENECK 
-    	//(TODO: optimize)
-        do{
-        	// Randomly reorder the tour
-        	Collections.shuffle(tour);
-        }while(violatePriorities());
+    	//doesn't matter if violates or not: will be punished after if it is the case        
+        Collections.shuffle(tour);
     }
 
     // Gets a city from the tour
@@ -87,11 +104,12 @@ public class Tour{
     			City destinationCity;
     			destinationCity = getCity(cityIndex+1);
     			// Get the distance between the two cities
-    			//System.out.println("cities " + fromCity.toString() + " " + destinationCity.toString() + "\n");
+    			// if distance = "-1", uses it anyway, because it will be punished after
     			tourDistance += fromCity.distanceToCity(destinationCity);
     			
     		}
-    		distance = tourDistance;
+    		int violations = this.countViolations();
+    		distance = tourDistance + (1000000 * violations); //punishing if violates
     	}
         return distance;
     }
