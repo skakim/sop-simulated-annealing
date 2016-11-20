@@ -92,7 +92,7 @@ public class SimulatedAnnealing {
     public static void main(String[] args) {
         // Create and add our cities
     	//TODO: relative path
-        int dimension = readFile("C:\\Users\\Usuario\\workspace\\SOP\\src\\inputs\\ESC07.sop");
+        int dimension = readFile("C:\\Users\\Usuario\\workspace\\SOP\\src\\inputs\\rbg109a.sop");
         
         //TODO: while external to Simulated Annealing
         // Set initial temp
@@ -108,11 +108,9 @@ public class SimulatedAnnealing {
         
         long startTime = System.nanoTime();
 
-        // Initialize initial solution
+        // Initialize initial solution (CONSTRUCTOR)
         Tour currentSolution = new Tour();
         currentSolution.generateIndividual();
-        
-        System.out.println("Initial solution distance: " + currentSolution.getDistance());
 
         // Set as current best
         Tour currentBest = new Tour(currentSolution.getTour());
@@ -125,8 +123,9 @@ public class SimulatedAnnealing {
         int multiStart = 0;
         
         
-        for(multiStart=0; multiStart<dimension; multiStart++)
+        for(multiStart=0; multiStart<10; multiStart++)
         { //multistart loop
+        	System.out.println("Initial solution at start number " + (multiStart+1) + ": " + currentSolution.getDistance());
         	long elapsedTime = 0;
         	thisStartTime = System.nanoTime();
 	        // Loop until system has cooled
@@ -181,7 +180,7 @@ public class SimulatedAnnealing {
 	        	finalBest = new Tour(currentBest.getTour());
 	        }
 	        
-	        //new beggining
+	        //new beggining (CONSTRUCTOR)
 	        currentSolution = new Tour(); //new "currentSolution" to the new start
 	        currentSolution.generateIndividual();
 	        
@@ -197,7 +196,6 @@ public class SimulatedAnnealing {
         System.out.println("\nFinal solution distance: " + finalBest.getDistance());
         System.out.println("Tour: " + finalBest);
         System.out.println("Total nodes visited: " + nodesVisited + " nodes.");
-        System.out.println("Total multi-starts: " + dimension + " starts.");
         
         long duration = (endTime - startTime)/1000000; //in milisseconds
         System.out.println("Simulated Annealing Time: " + duration/1000.0 + "s");

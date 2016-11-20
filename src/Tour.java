@@ -1,5 +1,6 @@
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Random;
 
 public class Tour{
 
@@ -72,12 +73,55 @@ public class Tour{
 
     // Creates a random individual
     public void generateIndividual() {
+    	ArrayList<City> destCities = new ArrayList<City>();
+    	ArrayList<City> validCities = new ArrayList<City>();
+    	ArrayList<Integer> passedCities = new ArrayList<Integer>();
+    	
+    	for (int cityIndex=0; cityIndex < tourSize(); cityIndex++) {
+            destCities.add(TourManager.getCity(cityIndex));
+        }
+    	
+    	for (int cityIndex=0; cityIndex < tourSize(); cityIndex++) {
+    		City city = TourManager.getCity(cityIndex);
+    		if(city.getPrecursors().isEmpty()){ //only can be an initial city if it don't have precursors
+    			destCities.remove(city);
+    			validCities.add(city);
+    		}
+    	}
+    	
+    	Random randomGenerator = new Random();
+    	
+    	for(int i=0; i < tourSize(); i++){ //adding all cities
+    		//select random valid city
+    		int index = randomGenerator.nextInt(validCities.size());
+    		City chosen = validCities.get(index);
+    		
+    		//add the city to the tour
+    		validCities.remove(index);
+    		passedCities.add(chosen.name);
+    		setCity(i, chosen);
+    		
+    		//Actualize valid cities
+    		ArrayList<City> invalidCities = new ArrayList<City>(destCities);
+    		for (int cityIndex=0; cityIndex < invalidCities.size(); cityIndex++) {
+        		City city = invalidCities.get(cityIndex);
+        		ArrayList <Integer> precursors = city.getPrecursors();
+        		if(passedCities.containsAll(precursors)){ 	//only can be an valid city if 
+        												  	//all his precursors already have been passed
+        			destCities.remove(city);
+        			validCities.add(city);
+        		}
+        	}
+    		
+    	}
+    	
+        /* First Method - Faster constructor, but returns bad Tours
         // Loop through all our destination cities and add them to our tour
     	for (int cityIndex=0; cityIndex < tourSize(); cityIndex++) {
           setCity(cityIndex, TourManager.getCity(cityIndex));
         }
     	//doesn't matter if violates or not: will be punished after if it is the case        
-        Collections.shuffle(tour);
+        Collections.shuffle(tour);*/
     }
 
     // Gets a city from the tour
